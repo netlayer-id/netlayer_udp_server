@@ -76,6 +76,52 @@ $server->on('packet', function($server, $data, $client, $workerId, $pid) {
 $server->start();
 ```
 
+## Multiple Servers in One Process
+
+Run multiple UDP servers simultaneously using process forking:
+
+```php
+<?php
+include("netlayer.php");
+
+$auth = new netlayer\process(function(){
+    $server = new netlayer\server("0.0.0.0", 1812);
+    $server->on("start", function($server){
+        echo "Started Port 1812\n";
+    });
+    
+    $server->on("packet", function($server, $data, $client){
+        $address = $client["address"] ?? null;
+        $port = $client["port"] ?? null;
+        
+        $response = "Reply Message From Netlayer";
+        $server->sendTo($address, $port, $response);
+    });
+    $server->start();
+});
+
+$acct = new netlayer\process(function(){
+    $server = new netlayer\server("0.0.0.0", 1813);
+    $server->on("start", function($server){
+        echo "Started Port 1813\n";
+    });
+    
+    $server->on("packet", function($server, $data, $client){
+        $address = $client["address"] ?? null;
+        $port = $client["port"] ?? null;
+        
+        $response = "Reply Message From Netlayer";
+        $server->sendTo($address, $port, $response);
+    });
+    $server->start();
+});
+
+$auth->start();
+$acct->start();
+
+while(netlayer\process::wait());
+```
+
 ## Configuration
 
 ```php
